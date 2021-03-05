@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-..mybatis.org..DTD Mapper 3.0..EN"
+    "http://www.mybatis.org/dtd/mybatis-3-mapper.dtd">
+    <mapper namespace="com.sssg.dao.UserDao">
+      <select id="findUser" parameterType="String" resultType="User">
+       select * from user where user_code=#{user_code} and user_password=#{user_password} and user_level=('普通客户' or '管理员')
+      </select>
+	<select id="selectUserByUserCode" parameterType="String" resultType="User">
+		select * from user where user_code=#{user_code}
+	</select>
+      <select id="findUserById" parameterType="int" resultType="User">
+       select * from user where user_id=#{user_id}
+      </select>
+	<select id="selectUserQuestionByUserCode" parameterType="String" resultType="String">
+		select user_question from user where user_code=#{user_code}
+	</select>
+	<select id="selectUserAnswerByUserCode" parameterType="String" resultType="String">
+		select user_answer from user where user_code=#{user_code}
+	</select>
+      <insert id="createUser" parameterType="User">
+       insert into user(user_code,user_password,user_phone,user_question,user_answer,user_level) values(#{user_code},#{user_password},#{user_phone},#{user_question},#{user_answer},'普通客户')
+      </insert>
+      <update id="updateUser" parameterType="User">
+	    update user
+	    <set>
+	        <if test="user_name!=null">
+	            user_name=#{user_name},
+	        </if>
+	         <if test="user_code!=null">
+	            user_code=#{user_code},
+	        </if>
+	         <if test="user_password!=null">
+	            user_password=#{user_password},
+	        </if>
+	        <if test="user_phone!=null">
+	            user_phone=#{user_phone},
+	        </if>
+	        <if test="user_address!=null">
+	            user_address=#{user_address},
+	        </if>
+	    </set>
+	    where user_id=#{user_id}
+	</update>
+	<update id="updateUserAddressByUserId">
+		update user
+		<set>
+			<if test="user_name!=null">
+				user_name=#{user_name},
+			</if>
+			<if test="user_phone!=null">
+				user_phone=#{user_phone},
+			</if>
+			<if test="user_address!=null">
+				user_address=#{user_address},
+			</if>
+		</set>
+		where user_id=#{user_id}
+	</update>
+    <update id="updatePassword" parameterType="User">
+     update user set user_password=#{user_password} where user_id = #{user_id}
+    </update>
+	<update id="updateUserPasswordByUserCode" parameterType="String">
+		update user set user_password=#{user_password} where user_code = #{user_code}
+	</update>
+    </mapper>

@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-..mybatis.org..DTD Mapper 3.0..EN"
+    "http://www.mybatis.org/dtd/mybatis-3-mapper.dtd">
+    
+  <mapper namespace="com.sssg.dao.ManageDao">
+    <!--  <select id="MerchantFindAllItem" resultType="Item">
+       select * from item where item_state=0
+       <if test="start !=null and rows != null">
+			limit #{start},#{rows}
+		</if>
+      </select>
+     -->
+     
+      <select id="MerchantFindAllItem" resultMap="ItemWithShape">
+     select item.item_id,item.item_name,item_category_detail.categorydetail_name,item_detail.* from item join item_category_detail on item_category_detail.categorydetail_id = item.item_categorydetail join item_detail on item.item_id=item_detail.item_id
+       <if test="start !=null and rows != null">
+			limit #{start},#{rows}
+		</if>
+      </select>
+      
+    <resultMap type="Item" id="ItemWithShape">
+    <id property="item_id" column="item_id" />
+    <result property="item_name" column="item_name" />
+     <result property="item_categorydetail" column="categorydetail_name" />
+    <collection property="shapeList" ofType="Shape">
+     <id property="shape_id" column="shape_id" />
+      <result property="item_shape" column="item_shape" />
+      <result property="shape_image" column="shape_image" />
+      <result property="shape_price" column="shape_price" />
+      <result property="shape_amount" column="shape_amount" />
+       <result property="shape_describle" column="shape_describle" />
+       <result property="shape_state" column="shape_state" />
+    </collection>
+    </resultMap>
+    
+    <select id="findItemByCondition" resultMap="ItemWithShape">
+      select item.*,item_detail.*,item_category_detail.categorydetail_name from item join item_detail on item_detail.item_id=item.item_id join item_category_detail on item_category_detail.categorydetail_id=item.item_categorydetail join item_category on item_category.category_id=item_category_detail.category_id
+       <where>
+        <if test="item.shapeList[0].item_shape!=null and item.shapeList[0].item_shape!=''">
+          and item_detail.item_shape like concat('%',#{item.shapeList[0].item_shape},'%')
+        </if>
+         <if test="item.shapeList[0].shape_state!=2">
+          and item_detail.shape_state = #{item.shapeList[0].shape_state}
+        </if>
+        <if test="item_category!=null and item_category!=''">
+          and item_category.category_name =#{item_category}
+        </if>
+        <if test="item.item_categorydetail!=null and item.item_categorydetail!=''">
+          and item.item_categorydetail =#{item.item_categorydetail}
+        </if>
+       </where>
+       <if test="item1.start !=null and item1.rows != null">
+			limit #{item1.start},#{item1.rows}
+		</if>
+      </select>
+    
+    
+     <select id="selectItemByConditionListCount" resultType="int">
+      select count(*) from item join item_detail on item_detail.item_id=item.item_id join item_category_detail on item_category_detail.categorydetail_id=item.item_categorydetail join item_category on item_category.category_id=item_category_detail.category_id
+       <where>
+        <if test="item.shapeList[0].item_shape!=null and item.shapeList[0].item_shape!=''">
+          and item_detail.item_shape like concat('%',#{item.shapeList[0].item_shape},'%')
+        </if>
+         <if test="item.shapeList[0].shape_state!=2">
+          and item_detail.shape_state = #{item.shapeList[0].shape_state}
+        </if>
+        <if test="item_category!=null and item_category!=''">
+          and item_category.category_name =#{item_category}
+        </if>
+        <if test="item.item_categorydetail!=null and item.item_categorydetail!=''">
+          and item.item_categorydetail =#{item.item_categorydetail}
+        </if>
+       </where>
+    </select>
+    
+    
+      <select id="selectItemListCount" resultType="int">
+      select count(*) from item join item_detail on item_detail.item_id=item.item_id join item_category_detail on item_category_detail.categorydetail_id=item.item_categorydetail join item_category on item_category.category_id=item_category_detail.category_id
+      </select>
+     
+     <select id="selectItemCategory" resultType="item_category">
+       select * from item_category
+      </select>  
+      
+    <!-- <resultMap type="item_category" id="item_categoryWithDetail">
+    <id property="category_id" column="category_id" />
+    <result property="category_name" column="category_name" />
+    <collection property="categoryDetailList" ofType="item_category_detail">
+     <id property="categorydetail_id" column="categorydetail_id" />
+      <result property="categorydetail_name" column="categorydetail_name" />
+    </collection>
+    </resultMap> -->
+    
+    <select id="selectCategoryDetailByItemCategory" parameterType="String" resultType="item_category_detail">
+       select item_category_detail.* from item_category join item_category_detail on item_category.category_id=item_category_detail.category_id and item_category.category_id=(select item_category.category_id from item_category where category_name=#{item_category})  
+      </select>  
+       <select id="selectItemIdByItemName" parameterType="String" resultType="int">
+       select item_id from item where item_name=#{item_name}
+      </select>
+      
+      <update id="setItemMinPriceAndSumAmount">
+       update item set item.item_price = (select min(item_detail.shape_price) from item_detail where item_detail.item_id=#{item_id}),item.item_amount=(select sum(item_detail.shape_amount) from item_detail where item_detail.item_id=#{item_id}) where item_name=#{item_name}
+      </update>
+      
+      
+   <update id="updateItem" parameterType="Item">
+      update item_detail set shape_price=#{shape_price},shape_amount=#{shape_amount} where shape_id=#{shape_id}
+    </update>
+    
+     <update id="deleteItem" parameterType="int">
+     update item_detail set shape_state=1 where shape_id=#{shape_id}
+    </update>
+    
+     <update id="recoverItem" parameterType="int">
+     update item_detail set shape_state=0 where shape_id=#{shape_id}
+    </update>
+    
+    <insert id="merchantAddItem" parameterType="Item">
+      insert into item(item_name,item_categorydetail,item_image,item_state) values(#{item_name},#{item_categorydetail},#{item_image},0)
+    </insert>
+    
+     <insert id="merchantAddItemShape">
+      insert into item_detail(item_id,item_shape,shape_image,shape_price,shape_amount,shape_describle,shape_state) values((select item_id from item where item_name=#{item_name}),#{shape.item_shape},#{shape.shape_image},#{shape.shape_price},#{shape.shape_amount},#{shape.shape_describle},0)
+    </insert>
+    
+  <select id="findAllOrders" resultMap="Orders">
+    select * from orders
+     <if test="start !=null and rows != null">
+			limit #{start},#{rows}
+		</if>
+   </select>
+   
+     <resultMap type="Order" id="Orders">
+     <id property="order_id" column="order_id" />
+      <collection property="carts" column="cart_id" ofType="Cart"
+      select="com.sssg.dao.CartDao.findCart">
+     </collection>
+      <collection property="user" column="user_id" ofType="User"
+      select="com.sssg.dao.UserDao.findUserById">
+     </collection>
+     </resultMap>
+     
+      <select id="selectOrderListCount" resultType="int">
+       select count(*) from orders
+      </select>
+  </mapper>
